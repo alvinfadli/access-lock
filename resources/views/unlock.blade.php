@@ -1,3 +1,7 @@
+@php
+    use Illuminate\Support\Js;
+@endphp
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +21,7 @@
 <script>
 (function () {
     @if(!empty($error))
-    var message = {{ json_encode('⚠️ ' . $error . "\n\nEnter access password:") }};
+    var message = {{ Js::from('⚠️ ' . $error . "\n\nEnter access password:") }};
     @else
     var message = 'Enter access password:';
     @endif
