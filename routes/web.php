@@ -7,24 +7,21 @@ use Illuminate\Support\Facades\Route;
 $prefix = config('access-lock.route_prefix', 'access-lock');
 $sessionKey = config('access-lock.session_key', 'access_lock_unlocked');
 
-Route::prefix($prefix)->group(function () use ($sessionKey) {
-
-    Route::get('/', function () {
-        return view('access-lock::unlock');
-    })->name('access-lock.show');
+Route::prefix($prefix)->middleware('web')->group(function () use ($sessionKey) {
 
     Route::post('/', function (Request $request) use ($sessionKey) {
-        $password = $request->input('password', '');
+        $password = (string) ($request->input('password') ?? '');
+        $intended = (string) ($request->input('intended') ?? '/');
 
         if (PasswordManager::verify($password)) {
             $request->session()->put($sessionKey, true);
 
-            $intended = $request->session()->pull('access_lock_intended', '/');
-
             return redirect($intended);
         }
 
-        return redirect()->route('access-lock.show')
+        // Wrong password — redirect back to the intended URL.
+        // The middleware will intercept it again and show the prompt with the error.
+        return redirect($intended)
             ->with('access_lock_error', 'Incorrect password. Please try again.');
     })->name('access-lock.unlock');
 

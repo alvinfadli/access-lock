@@ -13,7 +13,7 @@ class AccessLockMiddleware
         $sessionKey = config('access-lock.session_key', 'access_lock_unlocked');
         $routePrefix = config('access-lock.route_prefix', 'access-lock');
 
-        // Always allow requests to the unlock routes themselves to avoid redirect loops.
+        // Always let the unlock POST route through to avoid loops.
         if ($request->is($routePrefix) || $request->is($routePrefix.'/*')) {
             return $next($request);
         }
@@ -22,9 +22,11 @@ class AccessLockMiddleware
             return $next($request);
         }
 
-        // Store the intended URL so we can redirect back after successful unlock.
-        $request->session()->put('access_lock_intended', $request->fullUrl());
-
-        return redirect()->route('access-lock.show');
+        // Return the prompt view directly — no redirect needed.
+        // The current URL is embedded in the form so we can come back after unlock.
+        return response()->view('access-lock::unlock', [
+            'intended' => $request->fullUrl(),
+            'error'    => $request->session()->pull('access_lock_error'),
+        ]);
     }
 }

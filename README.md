@@ -51,22 +51,28 @@ php artisan config:clear
 
 ### Protect the Entire Application
 
+> **Important:** always add this middleware inside the **`web` group**, never in the global middleware stack. The global stack runs before `StartSession`, so `$request->session()` would not be available yet and you would get a *"Session store not set on request"* error.
+
 **Laravel 10 — `app/Http/Kernel.php`**
 
-Add `\AlvinFadli\AccessLock\Http\Middleware\AccessLockMiddleware::class` to the `$middleware` array (global middleware):
+Add it to the `web` group (after `StartSession`):
 
 ```php
-protected $middleware = [
-    // ...
-    \AlvinFadli\AccessLock\Http\Middleware\AccessLockMiddleware::class,
+protected $middlewareGroups = [
+    'web' => [
+        // ... existing entries ...
+        \AlvinFadli\AccessLock\Http\Middleware\AccessLockMiddleware::class,
+    ],
 ];
 ```
 
-**Laravel 11 — `bootstrap/app.php`**
+**Laravel 11 / 12 / 13 — `bootstrap/app.php`**
+
+Use `appendToGroup('web', ...)` — **not** `append()`:
 
 ```php
 ->withMiddleware(function (Middleware $middleware) {
-    $middleware->append(\AlvinFadli\AccessLock\Http\Middleware\AccessLockMiddleware::class);
+    $middleware->appendToGroup('web', \AlvinFadli\AccessLock\Http\Middleware\AccessLockMiddleware::class);
 })
 ```
 
