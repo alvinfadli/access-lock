@@ -37,4 +37,36 @@ return [
     */
     'route_prefix' => 'access-lock',
 
+    /*
+    |--------------------------------------------------------------------------
+    | Bypass Conditions
+    |--------------------------------------------------------------------------
+    |
+    | List query string keys or header names that bypass the lock when ALL
+    | listed items are present and non-empty on the incoming request.
+    |
+    | No value matching — just presence is enough.
+    |
+    | The session is permanently unlocked once a bypass condition is met;
+    | subsequent requests from that visitor pass through without needing
+    | the params or headers again.
+    |
+    */
+    'bypass' => [
+
+        // Query string keys that must ALL be present and non-empty.
+        // e.g. visiting /?ssoKey=anything&userId=123 will unlock the session.
+        'query' => [
+            // 'ssoKey',
+            // 'userId',
+        ],
+
+        // Header names that must ALL be present and non-empty.
+        // e.g. sending X-SSO-Key: anything will unlock the session.
+        'headers' => [
+            // 'X-SSO-Key',
+        ],
+
+    ],
+
 ];

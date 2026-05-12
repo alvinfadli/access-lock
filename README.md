@@ -149,8 +149,57 @@ return [
 
     // URL prefix for the unlock page routes (/access-lock by default).
     'route_prefix' => 'access-lock',
+
+    // Bypass conditions — see "Bypass Conditions" section below.
+    'bypass' => [
+        'query'   => [],
+        'headers' => [],
+    ],
 ];
 ```
+
+---
+
+## Bypass Conditions
+
+You can configure query string parameters or request headers that **automatically and permanently unlock the session** for a visitor — no password prompt is shown.
+
+This is useful for automated tools, CI checks, SSO redirects, or any trusted caller that should never see the lock screen.
+
+### Setup
+
+Publish the config and list the query keys / header names you want to act as bypass signals:
+
+```bash
+php artisan vendor:publish --tag=access-lock-config
+```
+
+```php
+// config/access-lock.php
+'bypass' => [
+
+    // All listed query keys must be present and non-empty to bypass.
+    // e.g. visiting /?ssoKey=anything&userId=123 will unlock the session.
+    'query' => [
+        'ssoKey',
+        'userId',
+    ],
+
+    // All listed header names must be present and non-empty to bypass.
+    // e.g. sending X-SSO-Key: anything will unlock the session.
+    'headers' => [
+        'X-SSO-Key',
+    ],
+
+],
+```
+
+### How it works
+
+- No value matching — only **presence** matters. Any non-empty value for the listed keys is accepted.
+- When **all** keys in a group (`query` or `headers`) are present and non-empty, the session is flagged as unlocked and the request passes through.
+- On **all subsequent requests** from that visitor, the session flag is already set — the params/headers are no longer required.
+- An empty `query` or `headers` array disables that bypass group entirely.
 
 ---
 

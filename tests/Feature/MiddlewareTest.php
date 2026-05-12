@@ -103,4 +103,101 @@ class MiddlewareTest extends TestCase
             ->assertOk()
             ->assertSee('Protected content');
     }
+
+    // -------------------------------------------------------------------------
+    // Query param bypass (presence only — any non-empty value counts)
+    // -------------------------------------------------------------------------
+
+    public function test_query_param_present_bypasses_lock_and_passes_through(): void
+    {
+        $this->app['config']->set('access-lock.bypass.query', ['ssoKey']);
+
+        $this->get('/protected?ssoKey=anything')
+            ->assertOk()
+            ->assertSee('Protected content');
+    }
+
+    public function test_all_required_query_params_must_be_present(): void
+    {
+        $this->app['config']->set('access-lock.bypass.query', ['ssoKey', 'userId']);
+
+        // Only one of the two keys present — should still show prompt.
+        $this->get('/protected?ssoKey=abc')
+            ->assertOk()
+            ->assertSee('access-lock-form');
+
+        // Both keys present — should bypass.
+        $this->get('/protected?ssoKey=abc&userId=123')
+            ->assertOk()
+            ->assertSee('Protected content');
+    }
+
+    public function test_query_param_bypass_permanently_unlocks_session(): void
+    {
+        $this->app['config']->set('access-lock.bypass.query', ['ssoKey']);
+
+        // First request with the param — unlocks the session.
+        $this->get('/protected?ssoKey=anything')->assertOk();
+
+        // Subsequent request WITHOUT the param — session is still unlocked.
+        $this->get('/protected')
+            ->assertOk()
+            ->assertSee('Protected content');
+    }
+
+    public function test_missing_query_param_shows_prompt(): void
+    {
+        $this->app['config']->set('access-lock.bypass.query', ['ssoKey']);
+
+        $this->get('/protected')
+            ->assertOk()
+            ->assertSee('access-lock-form');
+    }
+
+    public function test_empty_query_bypass_config_does_not_bypass(): void
+    {
+        $this->app['config']->set('access-lock.bypass.query', []);
+
+        $this->get('/protected?ssoKey=anything')
+            ->assertOk()
+            ->assertSee('access-lock-form');
+    }
+
+    // -------------------------------------------------------------------------
+    // Header bypass (presence only — any non-empty value counts)
+    // -------------------------------------------------------------------------
+
+    public function test_header_present_bypasses_lock_and_passes_through(): void
+    {
+        $this->app['config']->set('access-lock.bypass.headers', ['X-SSO-Key']);
+
+        $this->withHeaders(['X-SSO-Key' => 'anything'])
+            ->get('/protected')
+            ->assertOk()
+            ->assertSee('Protected content');
+    }
+
+    public function test_header_bypass_permanently_unlocks_session(): void
+    {
+        $this->app['config']->set('access-lock.bypass.headers', ['X-SSO-Key']);
+
+        // First request with the header — unlocks the session.
+        $this->withHeaders(['X-SSO-Key' => 'anything'])
+            ->get('/protected')
+            ->assertOk();
+
+        // Subsequent request WITHOUT the header — session is still unlocked.
+        $this->get('/protected')
+            ->assertOk()
+            ->assertSee('Protected content');
+    }
+
+    public function test_missing_header_shows_prompt(): void
+    {
+        $this->app['config']->set('access-lock.bypass.headers', ['X-SSO-Key']);
+
+        $this->get('/protected')
+            ->assertOk()
+            ->assertSee('access-lock-form');
+    }
 }
