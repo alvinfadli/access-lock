@@ -17,7 +17,7 @@
 <script>
 (function () {
     @if(!empty($error))
-    var message = {{ Illuminate\Support\Js::from('⚠️ ' . $error . "\n\nEnter access password:") }};
+    var message = {{ json_encode('⚠️ ' . $error . "\n\nEnter access password:") }};
     @else
     var message = 'Enter access password:';
     @endif
