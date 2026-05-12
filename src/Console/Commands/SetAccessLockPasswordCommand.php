@@ -42,10 +42,9 @@ class SetAccessLockPasswordCommand extends Command
 
         $this->info('Access-lock password set successfully.');
         $this->line('');
-        $this->line('The following line has been written to your <comment>.env</comment> file:');
+        $this->line('Your .env file update, run: php artisan config:clear:');
         $this->line('  <info>ACCESS_LOCK_PASSWORD_HASH="'.$hash.'"</info>');
         $this->line('');
-        $this->comment('If your application caches config, run: php artisan config:clear');
 
         return self::SUCCESS;
     }
