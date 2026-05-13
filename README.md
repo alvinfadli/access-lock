@@ -97,7 +97,7 @@ Route::middleware('access.lock.api')->group(function () {
 POST the staging password to the built-in unlock endpoint. No authentication is required for this endpoint — it is the entry point.
 
 ```
-POST /access-lock/api/unlock
+POST /api/access-lock/unlock
 Content-Type: application/json
 
 { "password": "your-staging-password" }
@@ -105,7 +105,7 @@ Content-Type: application/json
 
 **Success (200):**
 ```json
-{ "token": "your-staging-password" }
+{ "token": "your-staging-token", "expires_in": 120 }
 ```
 
 **Wrong password (401):**
@@ -131,7 +131,7 @@ The middleware verifies the token against the configured bcrypt hash on every re
 
 #### How it works
 
-1. The client POSTs the password to `/access-lock/api/unlock`.
+1. The client POSTs the password to `/api/access-lock/unlock`.
 2. The package verifies it using `access_lock_verify()`.
 3. On success, the plain-text password is returned as a token.
 4. The client stores the token (e.g. `localStorage`) and sends it with every subsequent request.
@@ -154,6 +154,25 @@ Route::middleware('access.lock')->group(function () {
 
 ```php
 Route::get('/secret', [SecretController::class, 'index'])->middleware('access.lock');
+```
+
+---
+
+### Protect a Route Group (api)
+
+```php
+Route::middleware('access.lock.api')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/reports', [ReportController::class, 'index']);
+});
+```
+
+---
+
+### Protect a Single Route (api)
+
+```php
+Route::get('/secret', [SecretController::class, 'index'])->middleware('access.lock.api');
 ```
 
 ---
