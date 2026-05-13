@@ -203,9 +203,57 @@ php artisan vendor:publish --tag=access-lock-config
 
 ---
 
+## API Support
+
+The package includes a **stateless API middleware** for protecting API routes. Unlike the web middleware (which uses sessions and a browser prompt), the API middleware authenticates requests via a **pre-shared static token** and returns **JSON responses**.
+
+### Setup
+
+1. Set a token in your `.env`:
+
+```
+ACCESS_LOCK_API_TOKEN=my-secret-token
+```
+
+2. Apply the `access.lock.api` middleware to your API routes:
+
+```php
+Route::middleware('access.lock.api')->group(function () {
+    Route::get('/api/data', [DataController::class, 'index']);
+});
+```
+
+3. Send the token with every request using either header format:
+
+```bash
+# Using Authorization header
+curl -H "Authorization: Bearer my-secret-token" https://your-app.com/api/data
+
+# Using custom header
+curl -H "X-Access-Lock-Token: my-secret-token" https://your-app.com/api/data
+```
+
+### Configuration
+
+```php
+// config/access-lock.php
+'api' => [
+    'token' => env('ACCESS_LOCK_API_TOKEN', null),
+],
+```
+
+### Error Responses
+
+| Status | Body | Meaning |
+|---|---|---|
+| `401` | `{"message": "Access token required."}` | No token was provided. |
+| `403` | `{"message": "Invalid or expired access token."}` | Token is wrong. |
+
+---
+
 ## Helper Functions
 
-The package provides three global helpers:
+The package provides four global helpers:
 
 ```php
 // Returns true if a password hash has been configured.
@@ -216,6 +264,9 @@ access_lock_unlocked(): bool
 
 // Verifies a plain-text password against the configured hash.
 access_lock_verify(string $password): bool
+
+// Verifies an API token against the configured driver (config or cache).
+access_lock_api_verify(string $token): bool
 ```
 
 ---
@@ -233,3 +284,4 @@ PasswordManager::setPassword('my-plain-text-password');
 ## License
 
 MIT — see [LICENSE](LICENSE).
+

@@ -3,6 +3,7 @@
 namespace AlvinFadli\AccessLock;
 
 use AlvinFadli\AccessLock\Console\Commands\SetAccessLockPasswordCommand;
+use AlvinFadli\AccessLock\Http\Middleware\AccessLockApiMiddleware;
 use AlvinFadli\AccessLock\Http\Middleware\AccessLockMiddleware;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
@@ -31,6 +32,7 @@ class AccessLockServiceProvider extends ServiceProvider
         /** @var Router $router */
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('access.lock', AccessLockMiddleware::class);
+        $router->aliasMiddleware('access.lock.api', AccessLockApiMiddleware::class);
     }
 
     protected function registerRoutes(): void
