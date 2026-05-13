@@ -189,6 +189,18 @@ Route::get('/secret', [SecretController::class, 'index'])->middleware('access.lo
 
 ---
 
+## How It Works (API)
+
+1. A client (SPA, mobile app, etc.) hits a protected API route.
+2. `AccessLockApiMiddleware` checks for a valid token in the `Authorization: Bearer` or `X-Access-Lock-Token` header.
+3. If no valid token is found, the request is rejected with a `401` or `403` response.
+4. The client obtains a token by POSTing the password to the `/api/access-lock/unlock` endpoint.
+5. On success, the server returns the plain-text password as a token (for convenience in decoupled setups).
+6. The client stores the token and includes it on every subsequent request.
+7. `AccessLockApiMiddleware` calls `access_lock_verify(token)` on each request — if it matches the configured hash, the request passes through; otherwise it returns `403`.
+
+---
+
 ## Publishing Assets
 
 ### Publish Config
@@ -235,6 +247,11 @@ return [
         'query'   => [],
         'headers' => [],
     ],
+    
+    // Setup API token TTL (in seconds)
+    'api' => [
+        'token_ttl' => env('ACCESS_LOCK_API_TOKEN_TTL', 120),
+    ],
 ];
 ```
 
@@ -273,15 +290,6 @@ php artisan vendor:publish --tag=access-lock-config
 
 ],
 ```
-
-### How it works
-
-- No value matching — only **presence** matters. Any non-empty value for the listed keys is accepted.
-- When **all** keys in a group (`query` or `headers`) are present and non-empty, the session is flagged as unlocked and the request passes through.
-- On **all subsequent requests** from that visitor, the session flag is already set — the params/headers are no longer required.
-- An empty `query` or `headers` array disables that bypass group entirely.
-
-> **Note:** for the API middleware (`access.lock.api`), bypass conditions pass the request through directly without requiring a token — no session is involved.
 
 ---
 
