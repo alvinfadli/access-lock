@@ -49,7 +49,7 @@ php artisan config:clear
 
 ## Usage
 
-### Protect the Entire Application
+### Web (Monolith / Blade)
 
 > **Important:** always add this middleware inside the **`web` group**, never in the global middleware stack. The global stack runs before `StartSession`, so `$request->session()` would not be available yet and you would get a *"Session store not set on request"* error.
 
@@ -78,7 +78,68 @@ Use `appendToGroup('web', ...)` — **not** `append()`:
 
 ---
 
-### Protect a Route Group
+### API (Decoupled / SPA / Mobile)
+
+For decoupled setups (e.g. Angular, React, Vue, or mobile apps talking to a Laravel API), use the `access.lock.api` middleware instead. It is token-based and returns JSON responses rather than redirecting to a Blade view.
+
+#### 1. Protect your API routes
+
+```php
+// routes/api.php
+Route::middleware('access.lock.api')->group(function () {
+    Route::apiResource('/users', UserController::class);
+    // ... other protected routes
+});
+```
+
+#### 2. Obtain a token
+
+POST the staging password to the built-in unlock endpoint. No authentication is required for this endpoint — it is the entry point.
+
+```
+POST /access-lock/api/unlock
+Content-Type: application/json
+
+{ "password": "your-staging-password" }
+```
+
+**Success (200):**
+```json
+{ "token": "your-staging-password" }
+```
+
+**Wrong password (401):**
+```json
+{ "message": "Invalid password." }
+```
+
+#### 3. Use the token on subsequent requests
+
+Include the token on every protected API request using one of two headers:
+
+```
+Authorization: Bearer your-staging-password
+```
+
+or
+
+```
+X-Access-Lock-Token: your-staging-password
+```
+
+The middleware verifies the token against the configured bcrypt hash on every request — no session or cache storage is needed.
+
+#### How it works
+
+1. The client POSTs the password to `/access-lock/api/unlock`.
+2. The package verifies it using `access_lock_verify()`.
+3. On success, the plain-text password is returned as a token.
+4. The client stores the token (e.g. `localStorage`) and sends it with every subsequent request.
+5. `AccessLockApiMiddleware` calls `access_lock_verify(token)` on each request — if it matches the configured hash, the request passes through; otherwise it returns `403`.
+
+---
+
+### Protect a Route Group (web)
 
 ```php
 Route::middleware('access.lock')->group(function () {
@@ -89,7 +150,7 @@ Route::middleware('access.lock')->group(function () {
 
 ---
 
-### Protect a Single Route
+### Protect a Single Route (web)
 
 ```php
 Route::get('/secret', [SecretController::class, 'index'])->middleware('access.lock');
@@ -97,7 +158,7 @@ Route::get('/secret', [SecretController::class, 'index'])->middleware('access.lo
 
 ---
 
-## How It Works
+## How It Works (Web)
 
 1. A visitor hits a protected route.
 2. `AccessLockMiddleware` checks the Laravel session for `access_lock_unlocked = true`.
@@ -201,6 +262,8 @@ php artisan vendor:publish --tag=access-lock-config
 - On **all subsequent requests** from that visitor, the session flag is already set — the params/headers are no longer required.
 - An empty `query` or `headers` array disables that bypass group entirely.
 
+> **Note:** for the API middleware (`access.lock.api`), bypass conditions pass the request through directly without requiring a token — no session is involved.
+
 ---
 
 ## Helper Functions
@@ -227,6 +290,15 @@ use AlvinFadli\AccessLock\Support\PasswordManager;
 
 PasswordManager::setPassword('my-plain-text-password');
 ```
+
+---
+
+## Middleware Reference
+
+| Alias | Class | Use case |
+|---|---|---|
+| `access.lock` | `AccessLockMiddleware` | Monolith / Blade apps — session-based, redirects to prompt page |
+| `access.lock.api` | `AccessLockApiMiddleware` | Decoupled / API apps — token-based, returns JSON |
 
 ---
 
