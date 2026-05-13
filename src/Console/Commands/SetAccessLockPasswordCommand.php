@@ -9,13 +9,14 @@ use RuntimeException;
 class SetAccessLockPasswordCommand extends Command
 {
     protected $signature = 'access-lock:set-password
-                            {--password= : The plain-text password to set (skips interactive prompt)}';
+                            {--password= : The plain-text password to set (skips interactive prompt)} {--ttl= : API token TTL in minutes}';
 
     protected $description = 'Set the access-lock password (stored as a bcrypt hash in .env)';
 
     public function handle(): int
     {
         $password = $this->option('password');
+        $ttl = $this->option('ttl');
 
         if (empty($password)) {
             $password = $this->secret('Enter new access-lock password');
@@ -33,8 +34,24 @@ class SetAccessLockPasswordCommand extends Command
             }
         }
 
+        if ($ttl !== null) {
+            if (! is_numeric($ttl) || (int) $ttl <= 0) {
+                $this->error('TTL must be a positive integer.');
+
+                return self::FAILURE;
+            }
+
+            $ttl = (int) $ttl;
+        }
+
         try {
             $hash = PasswordManager::setPassword($password);
+            if ($ttl !== null) {
+                PasswordManager::setEnvValue(
+                    'ACCESS_LOCK_API_TOKEN_TTL',
+                    (string) $ttl
+                );
+            }
         } catch (RuntimeException $e) {
             $this->error($e->getMessage());
             return self::FAILURE;
@@ -44,6 +61,11 @@ class SetAccessLockPasswordCommand extends Command
         $this->line('');
         $this->line('Your .env file update, run: php artisan config:clear:');
         $this->line('  <info>ACCESS_LOCK_PASSWORD_HASH="'.$hash.'"</info>');
+        
+        if ($ttl) {
+            $this->line('  <info>ACCESS_LOCK_API_TOKEN_TTL="'.$ttl.'"</info>');
+        }
+        
         $this->line('');
 
         return self::SUCCESS;
