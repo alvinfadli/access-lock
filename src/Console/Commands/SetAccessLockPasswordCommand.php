@@ -53,7 +53,7 @@ class SetAccessLockPasswordCommand extends Command
             if ($ttl !== null) {
                 PasswordManager::setEnvValue(
                     'ACCESS_LOCK_API_TOKEN_TTL',
-                    (string) $ttl
+                    (int) $ttl
                 );
             }
         } catch (RuntimeException $e) {
