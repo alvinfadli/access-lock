@@ -34,16 +34,3 @@ if (! function_exists('access_lock_verify')) {
         return PasswordManager::verify($password);
     }
 }
-
-if (! function_exists('access_lock_api_verify')) {
-    /**
-     * Verify an API token against the configured static token.
-     */
-    function access_lock_api_verify(string $token): bool
-    {
-        $configToken = config('access-lock.api.token');
-
-        return ! empty($configToken) && hash_equals($configToken, $token);
-    }
-}
-

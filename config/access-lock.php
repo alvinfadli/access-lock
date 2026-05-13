@@ -69,22 +69,4 @@ return [
 
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | API Support
-    |--------------------------------------------------------------------------
-    |
-    | A pre-shared static token for stateless API authentication.
-    | Set ACCESS_LOCK_API_TOKEN in your .env and send it as a
-    | Bearer token or X-Access-Lock-Token header on every request
-    | to routes protected by the "access.lock.api" middleware.
-    |
-    */
-    'api' => [
-
-        // The pre-shared static token for API authentication.
-        'token' => env('ACCESS_LOCK_API_TOKEN', null),
-
-    ],
-
 ];
