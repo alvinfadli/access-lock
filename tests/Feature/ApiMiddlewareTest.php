@@ -65,31 +65,73 @@ class ApiMiddlewareTest extends TestCase
 
     public function test_correct_bearer_token_passes_through(): void
     {
-        $this->app['config']->set('access-lock.password_hash', Hash::make('secret'));
+        $this->app['config']->set(
+            'access-lock.password_hash',
+            Hash::make('secret')
+        );
 
-        $this->withToken('secret')
+        $unlockResponse = $this->postJson('/api/access-lock/unlock', [
+            'password' => 'secret',
+        ]);
+
+        $unlockResponse->assertOk();
+
+        $token = $unlockResponse->json('token');
+
+        $this->withToken($token)
             ->getJson('/api/protected')
             ->assertOk()
-            ->assertJson(['data' => 'secret']);
+            ->assertJson([
+                'data' => 'secret',
+            ]);
     }
 
     public function test_correct_x_access_lock_token_header_passes_through(): void
     {
-        $this->app['config']->set('access-lock.password_hash', Hash::make('secret'));
+        $this->app['config']->set(
+            'access-lock.password_hash',
+            Hash::make('secret')
+        );
 
-        $this->withHeaders(['X-Access-Lock-Token' => 'secret'])
+        $unlockResponse = $this->postJson('/api/access-lock/unlock', [
+            'password' => 'secret',
+        ]);
+
+        $unlockResponse->assertOk();
+
+        $token = $unlockResponse->json('token');
+
+        $this->withHeaders([
+                'X-Access-Lock-Token' => $token,
+            ])
             ->getJson('/api/protected')
             ->assertOk()
-            ->assertJson(['data' => 'secret']);
+            ->assertJson([
+                'data' => 'secret',
+            ]);
     }
 
     public function test_bearer_token_takes_precedence_over_x_access_lock_token_header(): void
     {
-        $this->app['config']->set('access-lock.password_hash', Hash::make('secret'));
+        $this->app['config']->set(
+            'access-lock.password_hash',
+            Hash::make('secret')
+        );
 
-        // Bearer is correct, header is wrong — should pass through.
-        $this->withToken('secret')
-            ->withHeaders(['X-Access-Lock-Token' => 'wrong'])
+        $unlockResponse = $this->postJson('/api/access-lock/unlock', [
+            'password' => 'secret',
+        ]);
+
+        $unlockResponse->assertOk();
+
+        $token = $unlockResponse->json('token');
+
+        // Bearer token valid, custom header invalid.
+        // Middleware should prioritize Bearer token.
+        $this->withToken($token)
+            ->withHeaders([
+                'X-Access-Lock-Token' => 'wrong',
+            ])
             ->getJson('/api/protected')
             ->assertOk();
     }

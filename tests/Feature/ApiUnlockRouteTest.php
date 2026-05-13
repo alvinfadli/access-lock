@@ -64,13 +64,25 @@ class ApiUnlockRouteTest extends TestCase
             ->assertJsonStructure(['token']);
     }
 
-    public function test_token_equals_the_submitted_password(): void
+    public function test_token_is_generated_after_successful_unlock(): void
     {
-        $this->app['config']->set('access-lock.password_hash', Hash::make('secret'));
+        $this->app['config']->set(
+            'access-lock.password_hash',
+            Hash::make('secret')
+        );
 
-        $response = $this->postJson(route('access-lock.api.unlock'), ['password' => 'secret']);
+        $response = $this->postJson(
+            route('access-lock.api.unlock'),
+            ['password' => 'secret']
+        );
 
-        $this->assertSame('secret', $response->json('token'));
+        $response->assertOk();
+
+        $token = $response->json('token');
+
+        $this->assertIsString($token);
+        $this->assertNotSame('secret', $token);
+        $this->assertEquals(64, strlen($token));
     }
 
     public function test_returned_token_can_be_used_to_access_protected_api_route(): void
