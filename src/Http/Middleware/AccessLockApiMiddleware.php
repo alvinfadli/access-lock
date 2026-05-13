@@ -13,7 +13,7 @@ class AccessLockApiMiddleware
     {
         $routePrefix = config('access-lock.route_prefix', 'access-lock');
 
-        if ($request->is($routePrefix . '/api/unlock')) {
+        if ($request->is('api/' . $routePrefix . '/unlock')) {
             return $next($request);
         }
 
