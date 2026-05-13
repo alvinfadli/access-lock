@@ -22,6 +22,6 @@ class ApiUnlockController extends Controller
 
         Cache::put("access_lock_api:{$token}", true, now()->addMinutes($ttl));
 
-        return response()->json(['token' => $token]);
+        return response()->json(['token' => $token, 'expires_in' => $ttl]);
     }
 }
