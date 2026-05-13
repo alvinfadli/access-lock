@@ -10,6 +10,12 @@ class AccessLockApiMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
+        $routePrefix = config('access-lock.route_prefix', 'access-lock');
+
+        if ($request->is($routePrefix . '/api/unlock')) {
+            return $next($request);
+        }
+
         $queryKeys = config('access-lock.bypass.query', []);
         if (! empty($queryKeys) && $this->allPresent($queryKeys, fn ($k) => $request->query($k))) {
             return $next($request);
