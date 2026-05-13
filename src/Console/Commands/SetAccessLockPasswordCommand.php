@@ -34,6 +34,10 @@ class SetAccessLockPasswordCommand extends Command
             }
         }
 
+        if (empty($ttl)) {
+            $ttl = $this->ask('Enter API token TTL in minutes (optional, default: 7200)') ?? 7200;
+        }
+
         if ($ttl !== null) {
             if (! is_numeric($ttl) || (int) $ttl <= 0) {
                 $this->error('TTL must be a positive integer.');
