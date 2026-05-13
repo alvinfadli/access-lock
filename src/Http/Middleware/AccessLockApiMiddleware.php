@@ -4,6 +4,7 @@ namespace AlvinFadli\AccessLock\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 class AccessLockApiMiddleware
@@ -32,7 +33,7 @@ class AccessLockApiMiddleware
             return response()->json(['message' => 'Access token required.'], 401);
         }
 
-        if (! access_lock_verify($token)) {
+        if (! Cache::get("access_lock_api:{$token}")) {
             return response()->json(['message' => 'Invalid or expired access token.'], 403);
         }
 

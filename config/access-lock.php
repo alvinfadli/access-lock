@@ -39,6 +39,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | API
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the API middleware (access.lock.api).
+    |
+    | token_ttl: Lifetime of the access token in minutes. The token is stored
+    | in the cache and invalidated after this period. Defaults to 120 minutes.
+    | Override via ACCESS_LOCK_API_TOKEN_TTL in your .env file.
+    |
+    */
+    'api' => [
+        'token_ttl' => env('ACCESS_LOCK_API_TOKEN_TTL', 120),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Bypass Conditions
     |--------------------------------------------------------------------------
     |
