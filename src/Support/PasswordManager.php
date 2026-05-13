@@ -62,6 +62,37 @@ class PasswordManager
         return $hash;
     }
 
+    public static function setEnvValue(string $key, string $value): void
+    {
+        $envPath = self::getEnvPath();
+
+        if (! file_exists($envPath)) {
+            throw new RuntimeException("Could not locate .env file at [{$envPath}].");
+        }
+
+        $contents = file_get_contents($envPath);
+
+        $escapedValue = addslashes($value);
+        $line = "{$key}=\"{$escapedValue}\"";
+
+        if (str_contains($contents, $key.'=')) {
+            // Replace existing entry (handles values with or without quotes).
+            // preg_replace_callback is used so the replacement is treated as a
+            // literal string — bcrypt hashes contain '$2y$12$…' which preg_replace
+            // would misinterpret as back-references ($2, $1, …) and corrupt.
+            $contents = preg_replace_callback(
+                '/^'.$key.'=.*/m',
+                static fn () => $line,
+                $contents
+            );
+        } else {
+            // Append new entry.
+            $contents = rtrim($contents)."\n".$line."\n";
+        }
+
+        file_put_contents($envPath, $contents);
+    }
+
     protected static function getEnvPath(): string
     {
         return app()->environmentFilePath();
